@@ -26,6 +26,12 @@ describe("extractCAs", () => {
   it("ignores SOL-like string without trigger", () => {
     expect(extractCAs(`hello ${SOL} world`)).toEqual([]);
   });
+  it("rejects MD5-like hex even with trigger on page (blast.fun case)", () => {
+    const md5 = "946a768adc4e47558c9d63d885d52d83";
+    const far = "contract ".padEnd(400, "0") + md5;
+    expect(extractCAs(far)).toEqual([]);
+    expect(extractCAs(`MINT ADDRESS: ${md5}`)).toEqual([]);
+  });
   it("does not emit SOL substrings of a Sui address even with trigger word", () => {
     expect(extractCAs(`CA drop ${SUI}`)).toEqual([{ chain: "SUI", ca: SUI }]);
   });

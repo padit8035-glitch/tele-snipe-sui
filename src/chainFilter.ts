@@ -32,6 +32,12 @@ export function extractCAs(text: string): DetectedCa[] {
       // Skip SOL candidates overlapping an exact SUI/EVM match (hex runs
       // contain long base58-valid spans that are not Solana addresses).
       if (spans.some(([a, b]) => s < b && e > a)) continue;
+      // Skip pure-hex strings (MD5/SHA build hashes in site bundles).
+      if (/^[0-9a-fA-F]+$/.test(m[0])) continue;
+      // Trigger word must be NEAR the candidate, not anywhere on the page
+      // (footers/JS bundles contain "address"/"dex" far from any real CA).
+      const window = text.slice(Math.max(0, s - 300), e + 300);
+      if (!SOL_TRIGGERS.test(window)) continue;
       push("SOL", m[0], s);
     }
   }
