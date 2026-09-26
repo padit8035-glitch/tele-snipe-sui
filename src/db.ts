@@ -5,6 +5,7 @@ export interface DetectionInput {
   chain: string; source: string; detectedAt: number;
 }
 export interface RecentDetection { source: string; detectedAt: number }
+export interface SourceState { lastHash: string | null; lastSeen: string | null; lastChangeAt: number | null }
 
 export interface Db {
   isDuplicate(tweetId: string, ca: string): boolean;
@@ -12,7 +13,10 @@ export interface Db {
   getLastSeen(handle: string): string | null;
   setLastSeen(handle: string, id: string): void;
   recordDetection(d: DetectionInput): void;
+  hasCa(project: string, caKey: string): boolean;
   recentDetection(project: string, caKey: string, excludeSource: string, withinMs: number): RecentDetection | null;
+  getSourceState(project: string, kind: string, value: string): SourceState | null;
+  setSourceState(project: string, kind: string, value: string, st: Partial<SourceState>): void;
   close(): void;
 }
 
@@ -109,6 +113,43 @@ export function initDb(path: string): Db {
         | { source: string; detected_at: number }
         | undefined;
       return r ? { source: r.source, detectedAt: r.detected_at } : null;
+    },
+    hasCa(project, caKey) {
+      return !!sql.prepare(
+        "SELECT 1 FROM detections WHERE project=? AND ca_key=? LIMIT 1"
+      ).get(project, caKey);
+    },
+    getSourceState(project, kind, value) {
+      const r = sql.prepare(
+        "SELECT last_hash, last_seen, last_change_at FROM sources WHERE project=? AND kind=? AND value=?"
+      ).get(project, kind, value) as
+        | { last_hash: string | null; last_seen: string | null; last_change_at: number | null }
+        | undefined;
+      if (!r) return null;
+      return { lastHash: r.last_hash, lastSeen: r.last_seen, lastChangeAt: r.last_change_at };
+    },
+    setSourceState(project, kind, value, st) {
+      const cur = ((): SourceState => {
+        const r = sql.prepare(
+          "SELECT last_hash, last_seen, last_change_at FROM sources WHERE project=? AND kind=? AND value=?"
+        ).get(project, kind, value) as
+          | { last_hash: string | null; last_seen: string | null; last_change_at: number | null }
+          | undefined;
+        return {
+          lastHash: r?.last_hash ?? null,
+          lastSeen: r?.last_seen ?? null,
+          lastChangeAt: r?.last_change_at ?? null,
+        };
+      })();
+      const next = {
+        lastHash: st.lastHash ?? cur.lastHash,
+        lastSeen: st.lastSeen ?? cur.lastSeen,
+        lastChangeAt: st.lastChangeAt ?? cur.lastChangeAt,
+      };
+      sql.prepare(
+        "INSERT INTO sources(project,kind,value,last_seen,last_hash,last_change_at) VALUES(?,?,?,?,?,?) " +
+        "ON CONFLICT(project,kind,value) DO UPDATE SET last_seen=excluded.last_seen, last_hash=excluded.last_hash, last_change_at=excluded.last_change_at"
+      ).run(project, kind, value, next.lastSeen, next.lastHash, next.lastChangeAt);
     },
     close() {
       sql.close();
