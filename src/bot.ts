@@ -46,7 +46,7 @@ export function createBot(token: string, d: BotDeps): Bot {
   bot.command("set_interval", async (ctx) => {
     try {
       setIntervalSec(d.dbPath, Number(ctx.match.trim()));
-      await ctx.reply(`interval = ${getIntervalSec(d.dbPath)}s`);
+      await ctx.reply(`interval = ${getIntervalSec(d.dbPath)}s (restart bot to apply)`);
     } catch (e) { await ctx.reply(String(e)); }
   });
   bot.command("stop", async (ctx) => {

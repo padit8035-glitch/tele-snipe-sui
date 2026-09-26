@@ -51,15 +51,24 @@ const bot = createBot(token, {
     executeBuy({ ca: s.ca, tweetId: s.tweetId, amountSui: getAmount(dbPath), db, paperMode, quote: cetusQuote, swap: cetusSwap }),
 });
 
+let running = false;
 async function tick(): Promise<void> {
-  if (!isEnabled(dbPath)) return;
-  const signals = await pollOnce(db, listAccounts(dbPath));
-  for (const s of signals) {
-    const r = await executeBuy({
-      ca: s.ca, tweetId: s.tweetId, amountSui: getAmount(dbPath),
-      db, paperMode, quote: cetusQuote, swap: cetusSwap,
-    });
-    await notifySignal(bot, ownerId, s, r, getAmount(dbPath));
+  if (running) return;
+  running = true;
+  try {
+    if (!isEnabled(dbPath)) return;
+    const signals = await pollOnce(db, listAccounts(dbPath));
+    for (const s of signals) {
+      const r = await executeBuy({
+        ca: s.ca, tweetId: s.tweetId, amountSui: getAmount(dbPath),
+        db, paperMode, quote: cetusQuote, swap: cetusSwap,
+      });
+      await notifySignal(bot, ownerId, s, r, getAmount(dbPath));
+    }
+  } catch (e) {
+    console.error("tick failed:", e);
+  } finally {
+    running = false;
   }
 }
 

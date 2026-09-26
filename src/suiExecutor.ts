@@ -11,6 +11,9 @@ export type BuyResult = { ok: true; txHash: string } | { ok: false; reason: stri
 export type QuoteFn = (ca: string, amountSui: number) => Promise<{ liquidityUsd: number }>;
 export type SwapFn = (ca: string, amountSui: number) => Promise<string>;
 
+// NOTE: cooldown + daily counters are in-memory only; a restart resets them.
+// Same-CA double-buy stays protected by SQLite seen_cas.
+// Persist counters before live trading.
 let lastBuyAt = 0;
 let buysToday = 0;
 let buyDay = "";

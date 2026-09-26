@@ -38,7 +38,7 @@ export function getAmount(dbPath: string): number {
   return Number(get(dbPath, "amount") ?? 1);
 }
 export function setAmount(dbPath: string, v: number): void {
-  if (!Number.isFinite(v) || v <= 0 || v > MAX_PER_BUY) throw new Error(`amount must be 0–${MAX_PER_BUY}`);
+  if (!Number.isFinite(v) || v <= 0 || v > MAX_PER_BUY) throw new Error(`amount must be 1–${MAX_PER_BUY}`);
   set(dbPath, "amount", String(v));
 }
 export function getIntervalSec(dbPath: string): number {
