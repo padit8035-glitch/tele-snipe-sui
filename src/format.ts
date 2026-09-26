@@ -20,7 +20,10 @@ export function formatDrop(o: {
   const head = o.ageLine ? `📦 ${o.project} · ${o.ageLine}` : `📦 ${o.project}`;
   const lines = o.sources.map((s, i) =>
     `${i < o.sources.length - 1 ? "├" : "└"} ${s.icon} ${s.url}`).join("\n");
-  return `🚨 CA DROP [${o.chain}]\n${head}\n\n\`${o.ca}\`\n\n📍 Terdeteksi di:\n${lines}\n\n⏱ ${o.time}`;
+  // CAs (esp. Sui module/name parts) may contain _ * ` [ which break
+  // Telegram Markdown parsing — escape them so sendMessage never 400s.
+  const safeCa = o.ca.replace(/([_*`[])/g, "\\$1");
+  return `🚨 CA DROP [${o.chain}]\n${head}\n\n\`${safeCa}\`\n\n📍 Terdeteksi di:\n${lines}\n\n⏱ ${o.time}`;
 }
 
 export function formatConfirm(o: { project: string; icon: "𝕏" | "🌐"; url: string }): string {

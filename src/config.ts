@@ -162,3 +162,14 @@ export function setSiteIntervalSec(dbPath: string, v: number): void {
   if (!Number.isInteger(v) || v < MIN_SITE_INTERVAL_SEC) throw new Error(`site interval min ${MIN_SITE_INTERVAL_SEC}s`);
   set(dbPath, "site_interval", String(v));
 }
+export function projectOfSource(dbPath: string, kind: SourceKind, value: string): string | null {
+  const sql = conn(dbPath);
+  try {
+    const r = sql.prepare("SELECT project FROM sources WHERE kind=? AND value=?").get(kind, value) as
+      | { project: string }
+      | undefined;
+    return r ? r.project : null;
+  } finally {
+    sql.close();
+  }
+}

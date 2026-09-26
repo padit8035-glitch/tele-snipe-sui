@@ -16,7 +16,10 @@ describe("pollOnce", () => {
     };
     const fetcher = vi.fn(async (h: string) => feed[h] ?? []);
     const sigs = await pollOnce(db, ["@foo"], fetcher, 0);
-    expect(sigs).toEqual([{ handle: "@foo", tweetId: "2", text: `launch ${CA}`, ca: CA }]);
+    expect(sigs).toEqual([{
+      handle: "@foo", tweetId: "2", text: `launch ${CA}`,
+      ca: CA, chain: "SUI", createdAt: null,
+    }]);
     // second poll: no new tweets → no signals, cursor advanced
     const sigs2 = await pollOnce(db, ["@foo"], fetcher, 0);
     expect(sigs2).toEqual([]);
@@ -28,6 +31,16 @@ describe("pollOnce", () => {
     db.recordBuy("old", CA, 1, "0xh");
     const fetcher = async () => [{ id: "9", text: `again ${CA}` }];
     expect(await pollOnce(db, ["@foo"], fetcher, 0)).toEqual([]);
+    db.close();
+  });
+  it("propagates chain + createdAt for EVM signals", async () => {
+    const evm = "0x" + "3f".repeat(20);
+    const db = initDb(":memory:");
+    const fetcher = async () => [{ id: "5", text: `contract ${evm}`, createdAt: 86_000 }];
+    expect(await pollOnce(db, ["@foo"], fetcher, 0)).toEqual([{
+      handle: "@foo", tweetId: "5", text: `contract ${evm}`,
+      ca: evm, chain: "EVM", createdAt: 86_000,
+    }]);
     db.close();
   });
 });

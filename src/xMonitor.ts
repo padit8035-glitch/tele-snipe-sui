@@ -1,9 +1,12 @@
 // src/xMonitor.ts
-import { extractCoinTypes } from "./caFilter.js";
+import { caKey, extractCAs, type Chain } from "./chainFilter.js";
 import type { Db } from "./db.js";
 
-export interface Tweet { id: string; text: string }
-export interface Signal { handle: string; tweetId: string; text: string; ca: string }
+export interface Tweet { id: string; text: string; createdAt?: number | null }
+export interface Signal {
+  handle: string; tweetId: string; text: string;
+  ca: string; chain: Chain; createdAt: number | null;
+}
 export type Fetcher = (handle: string) => Promise<Tweet[]>;
 
 // SWAP POINT: upgrade to paid X API by replacing ONLY this function.
@@ -39,11 +42,14 @@ export async function pollOnce(
     const last = db.getLastSeen(handle);
     const fresh = tweets.filter((t) => !last || t.id > last).sort((a, b) => (a.id < b.id ? -1 : 1));
     for (const t of fresh) {
-      for (const ca of extractCoinTypes(t.text)) {
-        if (seenThisPoll.has(ca)) continue;
-        if (!db.isDuplicate(t.id, ca)) {
-          out.push({ handle, tweetId: t.id, text: t.text, ca });
-          seenThisPoll.add(ca);
+      for (const d of extractCAs(t.text)) {
+        if (seenThisPoll.has(caKey(d.ca))) continue;
+        if (!db.isDuplicate(t.id, d.ca)) {
+          out.push({
+            handle, tweetId: t.id, text: t.text,
+            ca: d.ca, chain: d.chain, createdAt: t.createdAt ?? null,
+          });
+          seenThisPoll.add(caKey(d.ca));
         }
       }
       db.setLastSeen(handle, t.id);

@@ -32,7 +32,7 @@ export function extractCAs(text: string): DetectedCa[] {
       // Skip SOL candidates overlapping an exact SUI/EVM match (hex runs
       // contain long base58-valid spans that are not Solana addresses).
       if (spans.some(([a, b]) => s < b && e > a)) continue;
-      push("SOL", m[0]);
+      push("SOL", m[0], s);
     }
   }
   return out;

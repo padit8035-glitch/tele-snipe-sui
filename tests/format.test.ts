@@ -26,6 +26,13 @@ describe("format", () => {
     });
     expect(msg).toContain("├ 𝕏 https://x.com/a/status/1\n└ 🌐 https://b.io");
   });
+  it("escapes markdown in CA (underscore module)", () => {
+    const msg = formatDrop({
+      chain: "SUI", project: "p", ca: "0xAA::my_token::X",
+      ageLine: "", sources: [{ icon: "🌐", url: "https://b.io" }], time: "00:00:00",
+    });
+    expect(msg).toContain("`0xAA::my\\_token::X`");
+  });
   it("confirm message", () => {
     expect(formatConfirm({ project: "blast", icon: "🌐", url: "https://b.io" }))
       .toBe("✅ blast terkonfirmasi juga di 🌐 https://b.io");
