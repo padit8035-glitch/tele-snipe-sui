@@ -27,6 +27,7 @@ export async function pollOnce(
   gapMs = 4000,
 ): Promise<Signal[]> {
   const out: Signal[] = [];
+  const seenThisPoll = new Set<string>(); // same CA twice in one batch → single signal
   for (const handle of handles) {
     let tweets: Tweet[];
     try {
@@ -39,7 +40,11 @@ export async function pollOnce(
     const fresh = tweets.filter((t) => !last || t.id > last).sort((a, b) => (a.id < b.id ? -1 : 1));
     for (const t of fresh) {
       for (const ca of extractCoinTypes(t.text)) {
-        if (!db.isDuplicate(t.id, ca)) out.push({ handle, tweetId: t.id, text: t.text, ca });
+        if (seenThisPoll.has(ca)) continue;
+        if (!db.isDuplicate(t.id, ca)) {
+          out.push({ handle, tweetId: t.id, text: t.text, ca });
+          seenThisPoll.add(ca);
+        }
       }
       db.setLastSeen(handle, t.id);
     }
