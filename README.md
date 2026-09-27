@@ -1,5 +1,7 @@
 # tele-snipe-sui
 
+[![test](https://github.com/padit8035-glitch/tele-snipe-sui/actions/workflows/test.yml/badge.svg)](https://github.com/padit8035-glitch/tele-snipe-sui/actions/workflows/test.yml) [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Alert-only Telegram bot that watches X accounts and project websites for new token contract addresses (SUI, EVM, SOL) and pushes them to a private chat, grouped per project. It never places trades and never holds keys — it only tells you where a contract address showed up.
 
 ## Architecture
